@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚑 AI-Powered Smart Ambulance System - Enhanced Maps</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        
+        .header { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 2rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        
+        .container { display: grid; grid-template-columns: 1fr 400px; gap: 2rem; padding: 2rem; height: calc(100vh - 120px); }
+        
+        .map-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        #map { height: 100%; width: 100%; }
+        
+        .control-panel { background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow-y: auto; }
+        
+        .emergency-form { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 1rem; border: none; border-radius: 8px; font-size: 1rem; }
+        
+        .btn { padding: 1rem 2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1rem; transition: all 0.3s; width: 100%; }
+        .btn-emergency { background: white; color: #e74c3c; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; }
+        .stat-card h3 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .stat-card.success { background: linear-gradient(135deg, #27ae60, #229954); }
+        .stat-card.danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        
+        .emergency-list { max-height: 300px; overflow-y: auto; }
+        .emergency-item { background: #fff3cd; border-left: 4px solid #ffc107; padding: 1.5rem; margin-bottom: 1rem; border-radius: 8px; transition: all 0.3s; }
+        .emergency-item.critical { background: #f8d7da; border-left-color: #dc3545; }
+        
+        .route-info { background: #e8f5e8; padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; }
+        .traffic-info { background: #fff3cd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚑 AI-Powered Smart Ambulance System</h1>
+        <p>Real-time Emergency Response with Google Maps Integration</p>
+    </div>
+    
+    <div class="container">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="activeEmergencies">3</h3>
+                    <p>Active</p>
+                </div>
+                <div class="stat-card success">
+                    <h3 id="avgResponseTime">8.5</h3>
+                    <p>Avg ETA (min)</p>
+                </div>
+            </div>
+            
+            <div class="emergency-form">
+                <h3 style="margin-bottom: 1rem;">🚨 Create Emergency</h3>
+                <div class="form-group">
+                    <label>Pickup Location:</label>
+                    <input type="text" id="pickupLocation" placeholder="Enter address" value="Connaught Place, New Delhi">
+                </div>
+                <div class="form-group">
+                    <label>Patient Condition:</label>
+                    <select id="patientCondition">
+                        <option value="cardiac">Cardiac Emergency</option>
+                        <option value="stroke">Stroke</option>
+                        <option value="trauma">Trauma/Accident</option>
+                        <option value="general">General Emergency</option>
+                    </select>
+                </div>
+                <button class="btn btn-emergency" onclick="createEmergency()">🚑 Dispatch Ambulance</button>
+            </div>
+            
+            <div class="route-info" id="routeInfo" style="display: none;">
+                <h4>📍 Route Information</h4>
+                <p><strong>Distance:</strong> <span id="routeDistance">--</span></p>
+                <p><strong>Duration:</strong> <span id="routeDuration">--</span></p>
+                <p><strong>Traffic:</strong> <span id="trafficStatus">--</span></p>
+            </div>
+            
+            <div class="emergency-list">
+                <h3 style="margin-bottom: 1rem;">📋 Active Emergencies</h3>
+                <div class="emergency-item critical">
+                    <strong>EMG_001</strong> - Cardiac Emergency<br>
+                    <small>📍 CP, Delhi → 🏥 AIIMS | ⏱️ ETA: 8 min</small>
+                </div>
+                <div class="emergency-item">
+                    <strong>EMG_002</strong> - Trauma<br>
+                    <small>📍 Karol Bagh → 🏥 Max Hospital | ⏱️ ETA: 12 min</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+        let geocoder;
+        let ambulanceMarker;
+        let hospitalMarkers = [];
+        let emergencyMarkers = [];
+        let trafficLayer;
+        
+        // Hospital data
+        const hospitals = [
+            {name: 'AIIMS Delhi', lat: 28.5672, lng: 77.2100, type: 'Multi-specialty', beds: 15},
+            {name: 'Fortis Escorts', lat: 28.6139, lng: 77.2090, type: 'Cardiac Center', beds: 8},
+            {name: 'Max Hospital', lat: 28.6289, lng: 77.2065, type: 'Super Specialty', beds: 12},
+            {name: 'Apollo Hospital', lat: 28.6089, lng: 77.2190, type: 'Multi-specialty', beds: 10}
+        ];
+        
+        function initMap() {
+            // Initialize map
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 12,
+                center: { lat: 28.6139, lng: 77.2090 },
+                mapTypeId: 'roadmap',
+                styles: [
+                    {
+                        featureType: 'poi.medical',
+                        elementType: 'geometry',
+                        stylers: [{ color: '#ff6b6b' }]
+                    }
+                ]
+            });
+            
+            // Initialize services
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                polylineOptions: {
+                    strokeColor: '#e74c3c',
+                    strokeWeight: 5,
+                    strokeOpacity: 0.8
+                },
+                suppressMarkers: true
+            });
+            directionsRenderer.setMap(map);
+            
+            geocoder = new google.maps.Geocoder();
+            
+            // Add traffic layer
+            trafficLayer = new google.maps.TrafficLayer();
+            trafficLayer.setMap(map);
+            
+            // Add hospital markers
+            addHospitalMarkers();
+            
+            // Add ambulance marker
+            addAmbulanceMarker();
+            
+            // Show initial route
+            calculateRoute();
+            
+            // Simulate ambulance movement
+            simulateMovement();
+        }
+        
+        function addHospitalMarkers() {
+            hospitals.forEach((hospital, index) => {
+                const marker = new google.maps.Marker({
+                    position: { lat: hospital.lat, lng: hospital.lng },
+                    map: map,
+                    title: hospital.name,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: '#e74c3c',
+                        fillOpacity: 1,
+                        strokeColor: 'white',
+                        strokeWeight: 3
+                    },
+                    label: {
+                        text: '🏥',
+                        fontSize: '16px'
+                    }
+                });
+                
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 10px; min-width: 200px;">
+                            <h4>🏥 ${hospital.name}</h4>
+                            <p><strong>Type:</strong> ${hospital.type}</p>
+                            <p><strong>Available Beds:</strong> ${hospital.beds}</p>
+                            <p><strong>ER Load:</strong> ${Math.floor(Math.random() * 40 + 30)}%</p>
+                            <p><strong>Status:</strong> <span style="color: green;">Available</span></p>
+                        </div>
+                    `
+                });
+                
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+                
+                hospitalMarkers.push(marker);
+            });
+        }
+        
+        function addAmbulanceMarker() {
+            ambulanceMarker = new google.maps.Marker({
+                position: { lat: 28.6139, lng: 77.2090 },
+                map: map,
+                title: 'AMB_001 - Cardiac Emergency',
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 15,
+                    fillColor: '#3498db',
+                    fillOpacity: 1,
+                    strokeColor: 'white',
+                    strokeWeight: 3
+                },
+                label: {
+                    text: '🚑',
+                    fontSize: '18px'
+                },
+                animation: google.maps.Animation.BOUNCE
+            });
+            
+            const ambulanceInfo = new google.maps.InfoWindow({
+                content: `
+                    <div style="padding: 10px;">
+                        <h4>🚑 AMB_001</h4>
+                        <p><strong>Status:</strong> En Route to AIIMS</p>
+                        <p><strong>Emergency:</strong> Cardiac</p>
+                        <p><strong>Patient:</strong> Critical</p>
+                        <p><strong>ETA:</strong> 8 minutes</p>
+                    </div>
+                `
+            });
+            
+            ambulanceMarker.addListener('click', () => {
+                ambulanceInfo.open(map, ambulanceMarker);
+            });
+        }
+        
+        function calculateRoute() {
+            const start = { lat: 28.6139, lng: 77.2090 }; // Ambulance location
+            const end = { lat: 28.5672, lng: 77.2100 };   // AIIMS Delhi
+            
+            directionsService.route({
+                origin: start,
+                destination: end,
+                travelMode: google.maps.TravelMode.DRIVING,
+                drivingOptions: {
+                    departureTime: new Date(),
+                    trafficModel: 'bestguess'
+                },
+                avoidHighways: false,
+                avoidTolls: false
+            }, (response, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+                    
+                    const route = response.routes[0];
+                    const leg = route.legs[0];
+                    
+                    // Update route info
+                    document.getElementById('routeDistance').textContent = leg.distance.text;
+                    document.getElementById('routeDuration').textContent = leg.duration.text;
+                    document.getElementById('trafficStatus').textContent = 'Moderate traffic';
+                    document.getElementById('routeInfo').style.display = 'block';
+                    
+                    console.log(`Route calculated: ${leg.distance.text}, ${leg.duration.text}`);
+                } else {
+                    console.error('Directions request failed: ' + status);
+                }
+            });
+        }
+        
+        function simulateMovement() {
+            let step = 0;
+            const totalSteps = 50;
+            const startLat = 28.6139;
+            const startLng = 77.2090;
+            const endLat = 28.5672;
+            const endLng = 77.2100;
+            
+            setInterval(() => {
+                step = (step + 1) % totalSteps;
+                const progress = step / totalSteps;
+                
+                const lat = startLat + (endLat - startLat) * progress + (Math.random() - 0.5) * 0.002;
+                const lng = startLng + (endLng - startLng) * progress + (Math.random() - 0.5) * 0.002;
+                
+                ambulanceMarker.setPosition({ lat, lng });
+                
+                // Update ETA
+                const remainingTime = Math.max(1, Math.floor(8 * (1 - progress)));
+                document.getElementById('avgResponseTime').textContent = remainingTime;
+            }, 2000);
+        }
+        
+        function createEmergency() {
+            const location = document.getElementById('pickupLocation').value;
+            const condition = document.getElementById('patientCondition').value;
+            
+            if (!location) {
+                alert('Please enter a pickup location');
+                return;
+            }
+            
+            // Geocode the address
+            geocoder.geocode({ address: location + ', Bangalore, India' }, (results, status) => {
+                if (status === 'OK') {
+                    const position = results[0].geometry.location;
+                    
+                    // Add emergency marker
+                    const emergencyMarker = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        title: `Emergency: ${condition}`,
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 10,
+                            fillColor: '#f39c12',
+                            fillOpacity: 1,
+                            strokeColor: 'white',
+                            strokeWeight: 2
+                        },
+                        label: {
+                            text: '🚨',
+                            fontSize: '14px'
+                        },
+                        animation: google.maps.Animation.DROP
+                    });
+                    
+                    const emergencyInfo = new google.maps.InfoWindow({
+                        content: `
+                            <div style="padding: 10px;">
+                                <h4>🚨 New Emergency</h4>
+                                <p><strong>Location:</strong> ${location}</p>
+                                <p><strong>Condition:</strong> ${condition}</p>
+                                <p><strong>Status:</strong> Ambulance dispatched</p>
+                            </div>
+                        `
+                    });
+                    
+                    emergencyMarker.addListener('click', () => {
+                        emergencyInfo.open(map, emergencyMarker);
+                    });
+                    
+                    emergencyMarkers.push(emergencyMarker);
+                    
+                    // Center map on new emergency
+                    map.setCenter(position);
+                    map.setZoom(14);
+                    
+                    // Find nearest hospital
+                    findNearestHospital(position, condition);
+                    
+                    alert(`🚑 Emergency created at ${location}\nAmbulance dispatched for ${condition} emergency`);
+                } else {
+                    alert('Could not find location. Please try a different address.');
+                }
+            });
+        }
+        
+        function findNearestHospital(emergencyLocation, condition) {
+            let nearestHospital = hospitals[0];
+            let shortestDistance = google.maps.geometry.spherical.computeDistanceBetween(
+                emergencyLocation,
+                new google.maps.LatLng(nearestHospital.lat, nearestHospital.lng)
+            );
+            
+            hospitals.forEach(hospital => {
+                const distance = google.maps.geometry.spherical.computeDistanceBetween(
+                    emergencyLocation,
+                    new google.maps.LatLng(hospital.lat, hospital.lng)
+                );
+                
+                if (distance < shortestDistance) {
+                    shortestDistance = distance;
+                    nearestHospital = hospital;
+                }
+            });
+            
+            // Calculate route to nearest hospital
+            directionsService.route({
+                origin: emergencyLocation,
+                destination: { lat: nearestHospital.lat, lng: nearestHospital.lng },
+                travelMode: google.maps.TravelMode.DRIVING,
+                drivingOptions: {
+                    departureTime: new Date(),
+                    trafficModel: 'bestguess'
+                }
+            }, (response, status) => {
+                if (status === 'OK') {
+                    // Create new directions renderer for this route
+                    const newDirectionsRenderer = new google.maps.DirectionsRenderer({
+                        polylineOptions: {
+                            strokeColor: '#f39c12',
+                            strokeWeight: 4,
+                            strokeOpacity: 0.7
+                        },
+                        suppressMarkers: true
+                    });
+                    newDirectionsRenderer.setMap(map);
+                    newDirectionsRenderer.setDirections(response);
+                    
+                    const route = response.routes[0];
+                    const leg = route.legs[0];
+                    
+                    console.log(`New emergency route: ${leg.distance.text} to ${nearestHospital.name}`);
+                }
+            });
+        }
+        
+        // Initialize map when page loads
+        window.onload = function() {
+            // Check if Google Maps API is loaded
+            if (typeof google === 'undefined') {
+                document.getElementById('map').innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f8f9fa; color: #666;">
+                        <div style="text-align: center;">
+                            <h3>🗺️ Map Loading...</h3>
+                            <p>Google Maps API initializing</p>
+                            <p style="margin-top: 1rem; font-size: 0.9em;">
+                                Note: For full functionality, a valid Google Maps API key is required
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+    </script>
+    
+    <!-- Google Maps API with demo key -->
+    <script async defer 
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJIfhf2NKCpji5v4ODPb28lVDqDPeWmlIlibraries=places,directions,geometry&callback=initMap"
+        onerror="handleMapError()">
+    </script>
+    
+    <script>
+        function handleMapError() {
+            document.getElementById('map').innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f8f9fa; color: #666; padding: 2rem;">
+                    <div style="text-align: center;">
+                        <h3>🗺️ Google Maps Integration</h3>
+                        <p style="margin: 1rem 0;">To enable full Google Maps functionality:</p>
+                        <ol style="text-align: left; margin: 1rem 0;">
+                            <li>Get a Google Maps API key from Google Cloud Console</li>
+                            <li>Enable Maps JavaScript API, Places API, and Directions API</li>
+                            <li>Replace 'YOUR_API_KEY_HERE' in the script tag</li>
+                        </ol>
+                        <p style="margin-top: 1rem; font-size: 0.9em; color: #999;">
+                            The system will work with OpenStreetMap as fallback
+                        </p>
+                        <button onclick="location.href='index.html'" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Use OpenStreetMap Version
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

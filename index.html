@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HealSync - AI-Powered Smart Ambulance System with real-time emergency response, intelligent routing, virtual doctor assistance, and smart hospital allocation for Bangalore.">
+    <meta name="keywords" content="HealSync, ambulance, emergency, AI, healthcare, Bangalore, hospital, medical, smart routing, telemedicine, emergency response">
+    <meta name="author" content="HealSync Team">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#e74c3c">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://healsync.com/">
+    <meta property="og:title" content="HealSync - AI-Powered Smart Ambulance System">
+    <meta property="og:description" content="Revolutionary emergency response system with AI-driven routing, virtual doctor assistance, and smart hospital allocation.">
+    <meta property="og:image" content="https://healsync.com/preview.jpg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://healsync.com/">
+    <meta property="twitter:title" content="HealSync - AI-Powered Smart Ambulance System">
+    <meta property="twitter:description" content="Revolutionary emergency response system with AI-driven routing, virtual doctor assistance, and smart hospital allocation.">
+    <meta property="twitter:image" content="https://healsync.com/preview.jpg">
+    
+    <!-- Mobile App -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HealSync">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚑</text></svg>">
+    
+    <title>HealSync - AI-Powered Smart Ambulance System</title>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCJIfhf2NKCpji5v4ODPb28lVDqDPeWmlI&libraries=places,directions,geometry&callback=initMap"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header { 
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24, #ff3838); 
+            color: white; 
+            padding: 3rem 2rem; 
+            text-align: center; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        }
+        .header h1 { 
+            font-size: 3.5rem; 
+            margin-bottom: 1rem; 
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+        .header p { 
+            font-size: 1.4rem; 
+            opacity: 0.95;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .nav-tabs { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem; 
+            text-align: center; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .tab-btn { 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; 
+            border: none; 
+            padding: 1.2rem 2.5rem; 
+            margin: 0 0.8rem; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 1rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .tab-btn:hover::before {
+            left: 100%;
+        }
+        .tab-btn.active { 
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+        .tab-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 2rem;
+            position: relative;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+        .panel { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px; 
+            padding: 2.5rem; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        #map { height: 500px; border-radius: 8px; }
+        
+        .emergency-form { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 1rem; border: none; border-radius: 8px; font-size: 1rem; }
+        
+        .btn { 
+            padding: 1.2rem 2.5rem; 
+            border: none; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 1.1rem; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .btn:hover::before {
+            left: 100%;
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .btn-success { 
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+        }
+        .btn-danger { 
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+        .btn-emergency { 
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            color: #ff6b6b;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+        }
+        .btn:hover { 
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; 
+            padding: 2.5rem; 
+            border-radius: 20px; 
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+        .stat-card h3 { 
+            font-size: 3rem; 
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .stat-card.success { 
+            background: linear-gradient(135deg, #00b894, #00a085);
+            box-shadow: 0 8px 25px rgba(0, 184, 148, 0.3);
+        }
+        .stat-card.success:hover {
+            box-shadow: 0 15px 35px rgba(0, 184, 148, 0.4);
+        }
+        .stat-card.warning { 
+            background: linear-gradient(135deg, #fdcb6e, #e17055);
+            box-shadow: 0 8px 25px rgba(253, 203, 110, 0.3);
+        }
+        .stat-card.warning:hover {
+            box-shadow: 0 15px 35px rgba(253, 203, 110, 0.4);
+        }
+        .stat-card.danger { 
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+        .stat-card.danger:hover {
+            box-shadow: 0 15px 35px rgba(255, 107, 107, 0.4);
+        }
+        
+        .emergency-list { 
+            max-height: 500px; 
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .emergency-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .emergency-list::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        .emergency-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+        .emergency-item { 
+            background: linear-gradient(135deg, rgba(255,243,205,0.9), rgba(255,243,205,0.7));
+            border-left: 6px solid #ffc107; 
+            padding: 2rem; 
+            margin-bottom: 1.5rem; 
+            border-radius: 15px; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,193,7,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .emergency-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .emergency-item:hover::before {
+            opacity: 1;
+        }
+        .emergency-item:hover { 
+            transform: translateX(10px) translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(255,193,7,0.3);
+        }
+        .emergency-item.critical { 
+            background: linear-gradient(135deg, rgba(248,215,218,0.9), rgba(248,215,218,0.7));
+            border-left-color: #dc3545;
+            border-color: rgba(220,53,69,0.2);
+            animation: glow 2s infinite;
+        }
+        .emergency-item.critical:hover {
+            box-shadow: 0 12px 30px rgba(220,53,69,0.4);
+        }
+        .emergency-item.resolved { 
+            background: linear-gradient(135deg, rgba(212,237,218,0.9), rgba(212,237,218,0.7));
+            border-left-color: #28a745;
+            border-color: rgba(40,167,69,0.2);
+        }
+        .emergency-item.resolved:hover {
+            box-shadow: 0 12px 30px rgba(40,167,69,0.3);
+        }
+        .emergency-item strong {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .emergency-item small {
+            font-size: 0.95rem;
+            color: #5a6c7d;
+            line-height: 1.4;
+        }
+        
+        .vitals-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 1.5rem; 
+            margin-bottom: 2rem; 
+        }
+        .vital-card { 
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white; 
+            padding: 2rem 1.5rem; 
+            border-radius: 20px; 
+            text-align: center; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 25px rgba(44, 62, 80, 0.3);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .vital-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .vital-card:hover::before {
+            opacity: 1;
+        }
+        .vital-card:hover { 
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(44, 62, 80, 0.4);
+        }
+        .vital-card.critical { 
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            animation: pulse 2s infinite;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+        .vital-card.critical:hover {
+            box-shadow: 0 15px 35px rgba(255, 107, 107, 0.6);
+        }
+        .vital-card.abnormal { 
+            background: linear-gradient(135deg, #fdcb6e, #e17055);
+            box-shadow: 0 8px 25px rgba(253, 203, 110, 0.3);
+        }
+        .vital-card.abnormal:hover {
+            box-shadow: 0 15px 35px rgba(253, 203, 110, 0.4);
+        }
+        .vital-value { 
+            font-size: 2.5rem; 
+            font-weight: 700; 
+            margin-bottom: 0.8rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .vital-card p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        @keyframes pulse { 
+            0%, 100% { opacity: 1; transform: scale(1); } 
+            50% { opacity: 0.8; transform: scale(1.05); } 
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(255, 107, 107, 0.6); }
+        }
+        
+        .ai-guidance { 
+            background: linear-gradient(135deg, #00b894, #00a085, #55a3ff);
+            color: white; 
+            padding: 2.5rem; 
+            border-radius: 20px; 
+            margin-top: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 184, 148, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .ai-guidance::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+        }
+        .ai-guidance h3 {
+            position: relative;
+            z-index: 1;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .guidance-step { 
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 1.2rem; 
+            margin-bottom: 1rem; 
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        .guidance-step:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+        .guidance-step:last-child {
+            margin-bottom: 0;
+        }
+        
+        .hospital-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 2rem; 
+        }
+        .hospital-card { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(236, 240, 241, 0.3); 
+            padding: 2rem; 
+            border-radius: 20px; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .hospital-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(52, 152, 219, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .hospital-card:hover::before {
+            opacity: 1;
+        }
+        .hospital-card:hover { 
+            border-color: #667eea;
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+        }
+        .hospital-card.recommended { 
+            border-color: #00b894;
+            background: linear-gradient(135deg, rgba(213, 244, 230, 0.9), rgba(213, 244, 230, 0.7));
+            box-shadow: 0 8px 25px rgba(0, 184, 148, 0.2);
+        }
+        .hospital-card.recommended:hover {
+            box-shadow: 0 15px 40px rgba(0, 184, 148, 0.3);
+        }
+        .hospital-card h4 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .hospital-card p {
+            color: #5a6c7d;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+        
+        .video-call { 
+            background: linear-gradient(135deg, #2c3e50, #000);
+            height: 350px; 
+            border-radius: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .video-call::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(102, 126, 234, 0.1), transparent);
+        }
+        .video-call div {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+        .video-call p:first-child {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .video-call p:last-child {
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+        
+        .chat-area { 
+            background: rgba(248, 249, 250, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(222, 226, 230, 0.3); 
+            border-radius: 15px; 
+            padding: 1.5rem; 
+            height: 250px; 
+            overflow-y: auto; 
+            margin-bottom: 1.5rem;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .chat-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-area::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        .chat-area::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+        .chat-area div {
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.7);
+            border-left: 3px solid #667eea;
+        }
+        .chat-input { 
+            display: flex; 
+            gap: 1rem; 
+        }
+        .chat-input input { 
+            flex: 1; 
+            padding: 1.2rem; 
+            border: 2px solid rgba(222, 226, 230, 0.3); 
+            border-radius: 15px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .chat-input input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HealSync</h1>
+        <p>AI-Powered Smart Ambulance System - Real-time Emergency Response & Hospital Allocation</p>
+    </div>
+    
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="showTab('dashboard')">🏢 Control Center</button>
+        <button class="tab-btn" onclick="showTab('ambulance')">🚑 Ambulance Interface</button>
+        <button class="tab-btn" onclick="showTab('doctor')">👨⚕️ Doctor Console</button>
+    </div>
+    
+    <div class="container">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="activeEmergencies">3</h3>
+                    <p>Active Emergencies</p>
+                </div>
+                <div class="stat-card success">
+                    <h3 id="availableAmbulances">12</h3>
+                    <p>Available Ambulances</p>
+                </div>
+                <div class="stat-card warning">
+                    <h3 id="avgResponseTime">8.5</h3>
+                    <p>Avg Response Time (min)</p>
+                </div>
+                <div class="stat-card danger">
+                    <h3 id="criticalCases">1</h3>
+                    <p>Critical Cases</p>
+                </div>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; color: #2c3e50; font-size: 1.4rem;">🗺️ Real-time Map</h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span style="background: #00b894; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.7rem; font-weight: 600;">GPS ACTIVE</span>
+                            <span style="background: #667eea; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.7rem; font-weight: 600;">TRAFFIC DATA</span>
+                        </div>
+                    </div>
+                    <div id="map"></div>
+                </div>
+                
+                <div>
+                    <div class="emergency-form">
+                        <h3 style="margin-bottom: 1rem;">🚨 Create Emergency</h3>
+                        <div class="form-group">
+                            <label>Pickup Location:</label>
+                            <input type="text" id="pickupLocation" placeholder="Enter address or coordinates" value="MG Road, Bangalore">
+                        </div>
+                        <div class="form-group">
+                            <label>Patient Condition:</label>
+                            <select id="patientCondition">
+                                <option value="general">General Emergency</option>
+                                <option value="cardiac">Cardiac/Heart Attack</option>
+                                <option value="stroke">Stroke</option>
+                                <option value="trauma">Trauma/Accident</option>
+                                <option value="respiratory">Respiratory Distress</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-emergency" onclick="createEmergency()">🚑 Dispatch Ambulance</button>
+                    </div>
+                    
+                    <div class="panel">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                            <h3 style="margin: 0; color: #2c3e50; font-size: 1.4rem;">📋 Active Emergencies</h3>
+                            <span style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">LIVE</span>
+                        </div>
+                        <div class="emergency-list" id="emergencyList">
+                            <div class="emergency-item critical">
+                                <strong>EMG_001</strong> - Cardiac Emergency<br>
+                                <small>📍 MG Road, Bangalore | 🏥 Manipal Hospital | ⏱️ ETA: 8 min</small>
+                            </div>
+                            <div class="emergency-item">
+                                <strong>EMG_002</strong> - Trauma<br>
+                                <small>📍 Koramangala | 🏥 Apollo Hospital | ⏱️ ETA: 12 min</small>
+                            </div>
+                            <div class="emergency-item resolved">
+                                <strong>EMG_003</strong> - Resolved<br>
+                                <small>📍 Delivered to Fortis Hospital</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ambulance Tab -->
+        <div id="ambulance" class="tab-content">
+            <div class="panel" style="background: #2c3e50; color: white; margin-bottom: 2rem;">
+                <h3>🚑 Ambulance AMB_001 - Emergency EMG_001</h3>
+                <p>📍 En route to Manipal Hospital Bangalore | ⏱️ ETA: 8 minutes | 📏 Distance: 5.2 km</p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3 style="margin-bottom: 1rem;">📊 Patient Vitals</h3>
+                    
+                    <div class="vitals-grid">
+                        <div>
+                            <label>Heart Rate (bpm):</label>
+                            <input type="number" id="heartRate" placeholder="70" min="30" max="200">
+                        </div>
+                        <div>
+                            <label>BP Systolic:</label>
+                            <input type="number" id="bpSystolic" placeholder="120" min="60" max="250">
+                        </div>
+                        <div>
+                            <label>BP Diastolic:</label>
+                            <input type="number" id="bpDiastolic" placeholder="80" min="40" max="150">
+                        </div>
+                        <div>
+                            <label>O2 Saturation (%):</label>
+                            <input type="number" id="oxygenSat" placeholder="98" min="70" max="100">
+                        </div>
+                        <div>
+                            <label>Respiratory Rate:</label>
+                            <input type="number" id="respRate" placeholder="16" min="5" max="50">
+                        </div>
+                        <div>
+                            <label>Temperature (°C):</label>
+                            <input type="number" id="temperature" placeholder="36.5" min="30" max="45" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="updateVitals()" style="width: 100%; margin-bottom: 2rem;">📈 Update Vitals</button>
+                    
+                    <div class="vitals-grid" id="vitalsDisplay">
+                        <div class="vital-card">
+                            <div class="vital-value" id="hrDisplay">145</div>
+                            <div>Heart Rate (bpm)</div>
+                        </div>
+                        <div class="vital-card critical">
+                            <div class="vital-value" id="bpDisplay">85/55</div>
+                            <div>Blood Pressure</div>
+                        </div>
+                        <div class="vital-card abnormal">
+                            <div class="vital-value" id="o2Display">92%</div>
+                            <div>Oxygen Saturation</div>
+                        </div>
+                        <div class="vital-card">
+                            <div class="vital-value" id="respDisplay">22</div>
+                            <div>Respiratory Rate</div>
+                        </div>
+                        <div class="vital-card">
+                            <div class="vital-value" id="tempDisplay">36.8°C</div>
+                            <div>Temperature</div>
+                        </div>
+                        <div class="vital-card critical">
+                            <div class="vital-value" id="riskDisplay">CRITICAL</div>
+                            <div>Risk Level</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3 style="margin-bottom: 1rem;">🏥 Hospital Information</h3>
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                        <p><strong>🏥 Manipal Hospital Bangalore</strong></p>
+                        <p>📍 Distance: 5.2 km</p>
+                        <p>⏱️ ETA: 8 minutes</p>
+                        <p>🛏️ Beds Available: 8</p>
+                        <p>📞 Contact: +91-80-25023200</p>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="requestDoctorConsult()" style="width: 100%; margin-bottom: 1rem;">📞 Request Doctor Consult</button>
+                    <button class="btn btn-danger" onclick="showCPRGuidance()" style="width: 100%;">🫀 CPR Guidance</button>
+                </div>
+            </div>
+            
+            <div class="ai-guidance" id="aiGuidance">
+                <h3>🤖 AI Medical Guidance</h3>
+                <div id="guidanceContent">
+                    <div class="guidance-step">⚠️ CRITICAL: Patient showing signs of cardiac arrest</div>
+                    <div class="guidance-step">1. Check airway, breathing, circulation immediately</div>
+                    <div class="guidance-step">2. Prepare for CPR if pulse absent</div>
+                    <div class="guidance-step">3. Administer oxygen - target SpO2 > 94%</div>
+                    <div class="guidance-step">4. Establish IV access for medications</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Doctor Tab -->
+        <div id="doctor" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3 style="margin-bottom: 1rem;">📞 Live Consultation</h3>
+                    
+                    <div class="video-call" id="videoCall">
+                        <div style="text-align: center;">
+                            <p style="font-size: 1.5rem;">📹 Video Call with AMB_001</p>
+                            <p id="callStatus">Connected - Cardiac Emergency</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-area" id="chatMessages">
+                        <div><strong>Dr. Smith:</strong> What's the patient's current status?</div>
+                        <div><strong>Paramedic:</strong> 45-year-old male, chest pain, vitals critical</div>
+                        <div><strong>Dr. Smith:</strong> Start CPR immediately, I'm guiding you through it</div>
+                    </div>
+                    
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="Type your message...">
+                        <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                        <button class="btn btn-success" onclick="sendCPRProtocol()">🫀 Send CPR Protocol</button>
+                        <button class="btn btn-danger" onclick="alertHospital()">🏥 Alert Hospital</button>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3 style="margin-bottom: 1rem;">📊 Real-time Patient Data</h3>
+                    
+                    <div style="background: #f8d7da; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;">
+                        <p><strong>Emergency ID:</strong> EMG_001</p>
+                        <p><strong>Condition:</strong> Cardiac Emergency</p>
+                        <p><strong>Risk Level:</strong> CRITICAL</p>
+                        <p><strong>ETA to Hospital:</strong> 8 minutes (Manipal Hospital)</p>
+                    </div>
+                    
+                    <div class="vitals-grid">
+                        <div class="vital-card critical">
+                            <div class="vital-value">145</div>
+                            <div>Heart Rate</div>
+                        </div>
+                        <div class="vital-card critical">
+                            <div class="vital-value">85/55</div>
+                            <div>Blood Pressure</div>
+                        </div>
+                        <div class="vital-card abnormal">
+                            <div class="vital-value">92%</div>
+                            <div>O2 Saturation</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #d4edda; padding: 1.5rem; border-radius: 8px; margin-top: 2rem;">
+                        <h4>📋 Medical Protocol: Cardiac Emergency</h4>
+                        <ul style="margin-left: 1rem; margin-top: 1rem;">
+                            <li>Assess airway, breathing, circulation</li>
+                            <li>Administer oxygen if SpO2 < 94%</li>
+                            <li>Obtain 12-lead ECG</li>
+                            <li>Establish IV access</li>
+                            <li>Consider aspirin 325mg</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3 style="margin-bottom: 1rem;">🏥 Hospital Recommendations</h3>
+                <div class="hospital-grid">
+                    <div class="hospital-card recommended">
+                        <h4>🏥 Manipal Hospital (Recommended)</h4>
+                        <p>📍 Distance: 5.2 km | ⏱️ ETA: 8 min</p>
+                        <p>🫀 Cardiac Cath Lab Available</p>
+                        <p>🛏️ ICU Beds: 15 available</p>
+                        <p>📊 ER Load: 65%</p>
+                    </div>
+                    <div class="hospital-card">
+                        <h4>🏥 Apollo Hospital</h4>
+                        <p>📍 Distance: 7.1 km | ⏱️ ETA: 12 min</p>
+                        <p>🫀 Multi-specialty Center</p>
+                        <p>🛏️ ICU Beds: 8 available</p>
+                        <p>📊 ER Load: 45%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Google Maps
+        let map;
+        let directionsService;
+        let directionsRenderer;
+        let emergencyCount = 3;
+        let ambulanceMarker;
+        let hospitalMarkers = [];
+        
+        function initMap() {
+            // Initialize map centered on Bangalore
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 12,
+                center: { lat: 12.9716, lng: 77.5946 },
+                mapTypeId: 'roadmap',
+                styles: [
+                    {
+                        featureType: 'poi.medical',
+                        elementType: 'geometry',
+                        stylers: [{ color: '#ff6b6b' }]
+                    }
+                ]
+            });
+            
+            // Initialize directions service
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                polylineOptions: {
+                    strokeColor: '#e74c3c',
+                    strokeWeight: 4
+                }
+            });
+            directionsRenderer.setMap(map);
+            
+            // Add hospital markers for Bangalore
+            const hospitals = [
+                {name: 'Manipal Hospital', lat: 12.9698, lng: 77.6205, type: 'Multi-specialty'},
+                {name: 'Apollo Hospital', lat: 12.9698, lng: 77.6205, type: 'Multi-specialty'},
+                {name: 'Fortis Hospital', lat: 12.9698, lng: 77.6205, type: 'Multi-specialty'},
+                {name: 'Narayana Health', lat: 12.9698, lng: 77.6205, type: 'Cardiac Center'}
+            ];
+            
+            hospitals.forEach(hospital => {
+                const marker = new google.maps.Marker({
+                    position: { lat: hospital.lat, lng: hospital.lng },
+                    map: map,
+                    title: hospital.name,
+                    icon: {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                            <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="15" cy="15" r="12" fill="#e74c3c" stroke="white" stroke-width="2"/>
+                                <text x="15" y="20" text-anchor="middle" fill="white" font-size="16">🏥</text>
+                            </svg>
+                        `),
+                        scaledSize: new google.maps.Size(30, 30)
+                    }
+                });
+                
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div style="padding: 10px;">
+                            <h4>🏥 ${hospital.name}</h4>
+                            <p><strong>Type:</strong> ${hospital.type}</p>
+                            <p><strong>Status:</strong> Available</p>
+                            <p><strong>ER Load:</strong> ${Math.floor(Math.random() * 40 + 30)}%</p>
+                        </div>
+                    `
+                });
+                
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+                
+                hospitalMarkers.push(marker);
+            });
+            
+            // Add ambulance marker for Bangalore
+            ambulanceMarker = new google.maps.Marker({
+                position: { lat: 12.9716, lng: 77.5946 },
+                map: map,
+                title: 'AMB_001 - Cardiac Emergency',
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg width="35" height="35" viewBox="0 0 35 35" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="17.5" cy="17.5" r="15" fill="#3498db" stroke="white" stroke-width="2"/>
+                            <text x="17.5" y="23" text-anchor="middle" fill="white" font-size="18">🚑</text>
+                        </svg>
+                    `),
+                    scaledSize: new google.maps.Size(35, 35)
+                },
+                animation: google.maps.Animation.BOUNCE
+            });
+            
+            const ambulanceInfo = new google.maps.InfoWindow({
+                content: `
+                    <div style="padding: 10px;">
+                        <h4>🚑 AMB_001</h4>
+                        <p><strong>Status:</strong> En Route to Manipal Hospital</p>
+                        <p><strong>Emergency:</strong> Cardiac</p>
+                        <p><strong>ETA:</strong> 8 minutes</p>
+                    </div>
+                `
+            });
+            
+            ambulanceMarker.addListener('click', () => {
+                ambulanceInfo.open(map, ambulanceMarker);
+            });
+            
+            // Show route from ambulance to Manipal Hospital
+            calculateAndDisplayRoute();
+            
+            // Simulate ambulance movement
+            simulateAmbulanceMovement();
+        }
+        
+        function calculateAndDisplayRoute() {
+            const start = { lat: 12.9716, lng: 77.5946 }; // Current ambulance location (MG Road)
+            const end = { lat: 12.9698, lng: 77.6205 };   // Manipal Hospital Bangalore
+            
+            directionsService.route({
+                origin: start,
+                destination: end,
+                travelMode: google.maps.TravelMode.DRIVING,
+                avoidHighways: false,
+                avoidTolls: false
+            }, (response, status) => {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+                    
+                    // Calculate ETA
+                    const route = response.routes[0];
+                    const leg = route.legs[0];
+                    console.log(`Distance: ${leg.distance.text}, Duration: ${leg.duration.text}`);
+                } else {
+                    console.error('Directions request failed due to ' + status);
+                }
+            });
+        }
+        
+        function simulateAmbulanceMovement() {
+            setInterval(() => {
+                const lat = 12.9716 + (Math.random() - 0.5) * 0.01;
+                const lng = 77.5946 + (Math.random() - 0.5) * 0.01;
+                
+                ambulanceMarker.setPosition({ lat, lng });
+            }, 3000);
+        }
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Initialize map when dashboard is shown
+            if (tabName === 'dashboard' && !map) {
+                setTimeout(() => {
+                    if (typeof google !== 'undefined') {
+                        initMap();
+                    }
+                }, 100);
+            }
+        }
+        
+        function createEmergency() {
+            emergencyCount++;
+            const condition = document.getElementById('patientCondition').value;
+            const location = document.getElementById('pickupLocation').value;
+            
+            const emergencyList = document.getElementById('emergencyList');
+            const newEmergency = document.createElement('div');
+            newEmergency.className = condition === 'cardiac' ? 'emergency-item critical' : 'emergency-item';
+            newEmergency.innerHTML = `
+                <strong>EMG_${String(emergencyCount).padStart(3, '0')}</strong> - ${condition.charAt(0).toUpperCase() + condition.slice(1)} Emergency<br>
+                <small>📍 ${location} | 🏥 Allocating... | ⏱️ ETA: Calculating...</small>
+            `;
+            emergencyList.insertBefore(newEmergency, emergencyList.firstChild);
+            
+            // Update stats
+            document.getElementById('activeEmergencies').textContent = emergencyCount;
+            
+            // Simulate hospital allocation
+            setTimeout(() => {
+                const hospitals = ['AIIMS', 'Max Hospital', 'Fortis', 'Apollo'];
+                const hospital = hospitals[Math.floor(Math.random() * hospitals.length)];
+                const eta = Math.floor(Math.random() * 15) + 5;
+                
+                newEmergency.innerHTML = `
+                    <strong>EMG_${String(emergencyCount).padStart(3, '0')}</strong> - ${condition.charAt(0).toUpperCase() + condition.slice(1)} Emergency<br>
+                    <small>📍 ${location} | 🏥 ${hospital} | ⏱️ ETA: ${eta} min</small>
+                `;
+            }, 2000);
+            
+            alert(`🚑 Emergency EMG_${String(emergencyCount).padStart(3, '0')} created!\nAmbulance dispatched to ${location}`);
+        }
+        
+        function updateVitals() {
+            const vitals = {
+                heartRate: document.getElementById('heartRate').value || 145,
+                bpSystolic: document.getElementById('bpSystolic').value || 85,
+                bpDiastolic: document.getElementById('bpDiastolic').value || 55,
+                oxygenSat: document.getElementById('oxygenSat').value || 92,
+                respRate: document.getElementById('respRate').value || 22,
+                temperature: document.getElementById('temperature').value || 36.8
+            };
+            
+            // Update display
+            document.getElementById('hrDisplay').textContent = vitals.heartRate;
+            document.getElementById('bpDisplay').textContent = `${vitals.bpSystolic}/${vitals.bpDiastolic}`;
+            document.getElementById('o2Display').textContent = `${vitals.oxygenSat}%`;
+            document.getElementById('respDisplay').textContent = vitals.respRate;
+            document.getElementById('tempDisplay').textContent = `${vitals.temperature}°C`;
+            
+            // AI Analysis
+            let riskLevel = 'STABLE';
+            let guidance = ['Patient vitals within normal range. Continue monitoring.'];
+            
+            if (vitals.heartRate > 120 || vitals.bpSystolic < 90 || vitals.oxygenSat < 95) {
+                riskLevel = 'CRITICAL';
+                guidance = [
+                    '⚠️ CRITICAL: Multiple vital signs abnormal',
+                    '1. Check airway, breathing, circulation immediately',
+                    '2. Prepare for CPR if pulse absent',
+                    '3. Administer oxygen - target SpO2 > 94%',
+                    '4. Establish IV access for medications'
+                ];
+            } else if (vitals.heartRate > 100 || vitals.bpSystolic < 100 || vitals.oxygenSat < 98) {
+                riskLevel = 'HIGH';
+                guidance = [
+                    '⚠️ HIGH RISK: Monitor closely',
+                    '1. Continue oxygen therapy',
+                    '2. Monitor vitals every 2 minutes',
+                    '3. Prepare for potential deterioration'
+                ];
+            }
+            
+            document.getElementById('riskDisplay').textContent = riskLevel;
+            
+            // Update guidance
+            const guidanceContent = document.getElementById('guidanceContent');
+            guidanceContent.innerHTML = guidance.map(step => 
+                `<div class="guidance-step">${step}</div>`
+            ).join('');
+            
+            alert('✅ Vitals updated! AI analysis complete.');
+        }
+        
+        function requestDoctorConsult() {
+            alert('📞 Connecting to emergency doctor...\n\n✅ Dr. Smith is now available for consultation');
+            document.getElementById('callStatus').textContent = 'Connected - Dr. Smith available';
+        }
+        
+        function showCPRGuidance() {
+            const guidance = [
+                '🫀 CPR PROTOCOL ACTIVATED',
+                '1. Place heel of hand on center of chest',
+                '2. Place other hand on top, interlace fingers',
+                '3. Push hard and fast at least 2 inches deep',
+                '4. Rate: 100-120 compressions per minute',
+                '5. Give 30 compressions, then 2 rescue breaths',
+                '6. Continue until help arrives or patient responds'
+            ];
+            
+            document.getElementById('guidanceContent').innerHTML = guidance.map(step => 
+                `<div class="guidance-step">${step}</div>`
+            ).join('');
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML += `<div><strong>Dr. Smith:</strong> ${message}</div>`;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                input.value = '';
+            }
+        }
+        
+        function sendCPRProtocol() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `
+                <div style="background: #d4edda; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0;">
+                    <strong>CPR Protocol Sent:</strong><br>
+                    30 compressions, 2 breaths<br>
+                    Rate: 100-120/min, Depth: 2+ inches
+                </div>
+            `;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function alertHospital() {
+            alert('🏥 Hospital Alert Sent!\n\n✅ Manipal Hospital Bangalore notified\n• Cardiac team on standby\n• Cath lab prepared\n• ICU bed reserved');
+        }
+        
+        // Auto-dispatch system
+        let autoDispatchEnabled = true;
+        let emergencyCounter = 3;
+        
+        const emergencyTypes = [
+            { condition: 'cardiac', locations: ['Brigade Road', 'Whitefield', 'Electronic City', 'Indiranagar'] },
+            { condition: 'trauma', locations: ['Outer Ring Road', 'Hosur Road', 'Bannerghatta Road', 'Sarjapur Road'] },
+            { condition: 'stroke', locations: ['Jayanagar', 'Rajajinagar', 'Malleshwaram', 'Basavanagudi'] },
+            { condition: 'respiratory', locations: ['HSR Layout', 'BTM Layout', 'JP Nagar', 'Banashankari'] },
+            { condition: 'general', locations: ['Marathahalli', 'Bellandur', 'Hebbal', 'Yeshwanthpur'] }
+        ];
+        
+        const hospitals = ['Manipal Hospital', 'Apollo Hospital', 'Fortis Hospital', 'Narayana Health', 'Columbia Asia'];
+        
+        function autoDispatchEmergency() {
+            if (!autoDispatchEnabled) return;
+            
+            emergencyCounter++;
+            const randomType = emergencyTypes[Math.floor(Math.random() * emergencyTypes.length)];
+            const randomLocation = randomType.locations[Math.floor(Math.random() * randomType.locations.length)];
+            const randomHospital = hospitals[Math.floor(Math.random() * hospitals.length)];
+            const eta = Math.floor(Math.random() * 15) + 5;
+            
+            const emergencyList = document.getElementById('emergencyList');
+            const newEmergency = document.createElement('div');
+            
+            const isUrgent = Math.random() > 0.7;
+            newEmergency.className = isUrgent ? 'emergency-item critical' : 'emergency-item';
+            
+            newEmergency.innerHTML = `
+                <strong>EMG_${String(emergencyCounter).padStart(3, '0')}</strong> - ${randomType.condition.charAt(0).toUpperCase() + randomType.condition.slice(1)} Emergency<br>
+                <small>📍 ${randomLocation}, Bangalore | 🏥 ${randomHospital} | ⏱️ ETA: ${eta} min</small>
+            `;
+            
+            // Add with animation
+            newEmergency.style.opacity = '0';
+            newEmergency.style.transform = 'translateX(-20px)';
+            emergencyList.insertBefore(newEmergency, emergencyList.firstChild);
+            
+            // Animate in
+            setTimeout(() => {
+                newEmergency.style.transition = 'all 0.5s ease';
+                newEmergency.style.opacity = '1';
+                newEmergency.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Update stats
+            const activeCount = document.getElementById('activeEmergencies');
+            activeCount.textContent = parseInt(activeCount.textContent) + 1;
+            
+            // Update available ambulances
+            const availableAmb = document.getElementById('availableAmbulances');
+            const currentAvailable = parseInt(availableAmb.textContent);
+            if (currentAvailable > 0) {
+                availableAmb.textContent = currentAvailable - 1;
+            }
+            
+            // Show notification
+            showNotification(`🚨 Emergency Dispatched: EMG_${String(emergencyCounter).padStart(3, '0')}`, `${randomType.condition.toUpperCase()} emergency at ${randomLocation}. Ambulance en route to ${randomHospital}.`);
+            
+            // Auto-resolve some emergencies
+            setTimeout(() => {
+                if (Math.random() > 0.3) {
+                    resolveEmergency(newEmergency);
+                }
+            }, Math.random() * 60000 + 30000); // Resolve between 30s-90s
+        }
+        
+        function resolveEmergency(emergencyElement) {
+            emergencyElement.className = 'emergency-item resolved';
+            const content = emergencyElement.innerHTML;
+            emergencyElement.innerHTML = content.replace('Emergency<br>', 'Emergency - RESOLVED<br>').replace('ETA:', 'Delivered to hospital |');
+            
+            // Update stats
+            const activeCount = document.getElementById('activeEmergencies');
+            const criticalCount = document.getElementById('criticalCases');
+            activeCount.textContent = Math.max(0, parseInt(activeCount.textContent) - 1);
+            
+            if (emergencyElement.classList.contains('critical')) {
+                criticalCount.textContent = Math.max(0, parseInt(criticalCount.textContent) - 1);
+            }
+            
+            // Return ambulance to available pool
+            const availableAmb = document.getElementById('availableAmbulances');
+            availableAmb.textContent = parseInt(availableAmb.textContent) + 1;
+            
+            // Remove after some time
+            setTimeout(() => {
+                emergencyElement.style.transition = 'all 0.5s ease';
+                emergencyElement.style.opacity = '0';
+                emergencyElement.style.transform = 'translateX(20px)';
+                setTimeout(() => {
+                    if (emergencyElement.parentNode) {
+                        emergencyElement.parentNode.removeChild(emergencyElement);
+                    }
+                }, 500);
+            }, 10000);
+        }
+        
+        function showNotification(title, message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 15px;
+                box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+                z-index: 10000;
+                max-width: 350px;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">${title}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">${message}</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Auto remove
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 5000);
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start auto-dispatch system
+            setInterval(autoDispatchEmergency, Math.random() * 15000 + 10000); // Every 10-25 seconds
+            
+            // Simulate real-time updates
+            setInterval(() => {
+                const avgTime = document.getElementById('avgResponseTime');
+                const currentTime = parseFloat(avgTime.textContent);
+                avgTime.textContent = (currentTime + (Math.random() - 0.5) * 0.2).toFixed(1);
+            }, 5000);
+            
+            // Add control toggle
+            const controlToggle = document.createElement('div');
+            controlToggle.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+                padding: 1rem;
+                border-radius: 15px;
+                cursor: pointer;
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+                z-index: 1000;
+                font-weight: 600;
+                transition: all 0.3s ease;
+            `;
+            controlToggle.innerHTML = '🤖 Auto-Dispatch: ON';
+            controlToggle.onclick = () => {
+                autoDispatchEnabled = !autoDispatchEnabled;
+                controlToggle.innerHTML = `🤖 Auto-Dispatch: ${autoDispatchEnabled ? 'ON' : 'OFF'}`;
+                controlToggle.style.background = autoDispatchEnabled ? 
+                    'linear-gradient(135deg, #667eea, #764ba2)' : 
+                    'linear-gradient(135deg, #95a5a6, #7f8c8d)';
+            };
+            document.body.appendChild(controlToggle);
+        });
+    </script>
+</body>
+</html>
