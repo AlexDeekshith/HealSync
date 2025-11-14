@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambulance Interface - Smart Emergency System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; }
+        
+        .header { background: #e74c3c; padding: 1rem; text-align: center; }
+        .header h1 { margin-bottom: 0.5rem; }
+        
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; height: calc(100vh - 80px); }
+        
+        .panel { background: #2c3e50; border-radius: 8px; padding: 1rem; }
+        
+        .vitals-panel { display: flex; flex-direction: column; gap: 1rem; }
+        
+        .vitals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .vital-card { background: #34495e; padding: 1rem; border-radius: 8px; text-align: center; }
+        .vital-card.critical { background: #e74c3c; animation: pulse 1s infinite; }
+        .vital-card.abnormal { background: #f39c12; }
+        .vital-value { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        
+        .ai-guidance { background: #27ae60; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+        .ai-guidance h3 { margin-bottom: 1rem; }
+        .guidance-step { background: rgba(255,255,255,0.1); padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; }
+        
+        .navigation-panel { display: flex; flex-direction: column; gap: 1rem; }
+        
+        .route-info { background: #3498db; padding: 1rem; border-radius: 8px; }
+        .route-info h3 { margin-bottom: 1rem; }
+        
+        .hospital-info { background: #9b59b6; padding: 1rem; border-radius: 8px; }
+        
+        .btn { padding: 1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1rem; }
+        .btn-emergency { background: #e74c3c; color: white; }
+        .btn-update { background: #27ae60; color: white; }
+        
+        .status-bar { background: #34495e; padding: 0.5rem; text-align: center; margin-bottom: 1rem; border-radius: 4px; }
+        
+        .vital-input { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; }
+        .vital-input input { padding: 0.5rem; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚑 Ambulance Interface</h1>
+        <p>Real-time Patient Monitoring & AI Medical Assistance</p>
+    </div>
+    
+    <div class="container">
+        <div class="panel vitals-panel">
+            <div class="status-bar">
+                <strong>Emergency ID: <span id="emergencyId">EMG_001</span> | Status: <span id="emergencyStatus">En Route</span></strong>
+            </div>
+            
+            <h3>📊 Patient Vitals</h3>
+            
+            <div class="vital-input">
+                <input type="number" id="heartRate" placeholder="Heart Rate" min="30" max="200">
+                <input type="number" id="bpSystolic" placeholder="BP Systolic" min="60" max="250">
+                <input type="number" id="bpDiastolic" placeholder="BP Diastolic" min="40" max="150">
+                <input type="number" id="oxygenSat" placeholder="O2 Sat %" min="70" max="100">
+                <input type="number" id="respRate" placeholder="Resp Rate" min="5" max="50">
+                <input type="number" id="temperature" placeholder="Temp °C" min="30" max="45" step="0.1">
+            </div>
+            
+            <button class="btn btn-update" onclick="updateVitals()">📈 Update Vitals</button>
+            
+            <div class="vitals-grid" id="vitalsDisplay">
+                <div class="vital-card">
+                    <div class="vital-value" id="hrDisplay">--</div>
+                    <div>Heart Rate (bpm)</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-value" id="bpDisplay">--/--</div>
+                    <div>Blood Pressure</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-value" id="o2Display">--%</div>
+                    <div>Oxygen Saturation</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-value" id="respDisplay">--</div>
+                    <div>Respiratory Rate</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-value" id="tempDisplay">--°C</div>
+                    <div>Temperature</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-value" id="riskDisplay">STABLE</div>
+                    <div>Risk Level</div>
+                </div>
+            </div>
+            
+            <div class="ai-guidance" id="aiGuidance">
+                <h3>🤖 AI Medical Guidance</h3>
+                <div id="guidanceContent">
+                    <p>Enter patient vitals to receive AI-powered medical guidance...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel navigation-panel">
+            <div class="route-info">
+                <h3>🗺️ Route Information</h3>
+                <div id="routeDetails">
+                    <p><strong>Destination:</strong> <span id="hospitalName">Calculating...</span></p>
+                    <p><strong>Distance:</strong> <span id="distance">-- km</span></p>
+                    <p><strong>ETA:</strong> <span id="eta">-- minutes</span></p>
+                    <p><strong>Traffic Status:</strong> <span id="trafficStatus">Checking...</span></p>
+                </div>
+            </div>
+            
+            <div class="hospital-info">
+                <h3>🏥 Hospital Information</h3>
+                <div id="hospitalDetails">
+                    <p><strong>Specialty:</strong> <span id="hospitalSpecialty">General</span></p>
+                    <p><strong>Beds Available:</strong> <span id="bedsAvailable">--</span></p>
+                    <p><strong>ER Load:</strong> <span id="erLoad">--%</span></p>
+                    <p><strong>Contact:</strong> <span id="hospitalContact">--</span></p>
+                </div>
+            </div>
+            
+            <button class="btn btn-emergency" onclick="requestDoctorConsult()">📞 Request Doctor Consult</button>
+            
+            <div id="doctorConsult" style="display: none; background: #2c3e50; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                <h3>👨‍⚕️ Doctor Consultation</h3>
+                <div id="doctorVideo" style="background: #000; height: 200px; border-radius: 4px; margin: 1rem 0; display: flex; align-items: center; justify-content: center;">
+                    <p>Video call connecting...</p>
+                </div>
+                <button class="btn btn-update" onclick="endConsult()">End Consultation</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentEmergencyId = 'EMG_' + Date.now();
+        
+        // Initialize with sample data
+        document.getElementById('emergencyId').textContent = currentEmergencyId;
+        
+        function updateVitals() {
+            const vitals = {
+                heart_rate: parseInt(document.getElementById('heartRate').value) || 0,
+                blood_pressure_systolic: parseInt(document.getElementById('bpSystolic').value) || 0,
+                blood_pressure_diastolic: parseInt(document.getElementById('bpDiastolic').value) || 0,
+                oxygen_saturation: parseInt(document.getElementById('oxygenSat').value) || 0,
+                respiratory_rate: parseInt(document.getElementById('respRate').value) || 0,
+                temperature: parseFloat(document.getElementById('temperature').value) || 0
+            };
+            
+            // Update display
+            document.getElementById('hrDisplay').textContent = vitals.heart_rate || '--';
+            document.getElementById('bpDisplay').textContent = 
+                `${vitals.blood_pressure_systolic || '--'}/${vitals.blood_pressure_diastolic || '--'}`;
+            document.getElementById('o2Display').textContent = `${vitals.oxygen_saturation || '--'}%`;
+            document.getElementById('respDisplay').textContent = vitals.respiratory_rate || '--';
+            document.getElementById('tempDisplay').textContent = `${vitals.temperature || '--'}°C`;
+            
+            // Send to server for AI analysis
+            fetch('/api/vitals', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    emergency_id: currentEmergencyId,
+                    vitals: vitals
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateAIGuidance(data.guidance);
+                updateVitalStatus(data.guidance);
+            });
+        }
+        
+        function updateAIGuidance(guidance) {
+            const content = document.getElementById('guidanceContent');
+            
+            if (guidance.condition_prediction) {
+                content.innerHTML = `
+                    <p><strong>🔍 Predicted Condition:</strong> ${guidance.condition_prediction}</p>
+                    <p><strong>⚠️ Risk Level:</strong> ${guidance.risk_level.toUpperCase()}</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>📋 Immediate Actions:</strong>
+                        ${guidance.immediate_actions.map(action => `<div class="guidance-step">${action}</div>`).join('')}
+                    </div>
+                `;
+                
+                if (guidance.medication_suggestions.length > 0) {
+                    content.innerHTML += `
+                        <div style="margin-top: 1rem;">
+                            <strong>💊 Medication Suggestions:</strong>
+                            ${guidance.medication_suggestions.map(med => `<div class="guidance-step">${med}</div>`).join('')}
+                        </div>
+                    `;
+                }
+            } else {
+                content.innerHTML = '<p>Vitals within normal range. Continue monitoring.</p>';
+            }
+        }
+        
+        function updateVitalStatus(guidance) {
+            const riskDisplay = document.getElementById('riskDisplay');
+            riskDisplay.textContent = guidance.risk_level.toUpperCase();
+            
+            // Update vital card colors based on status
+            Object.keys(guidance.vital_status).forEach(vital => {
+                const status = guidance.vital_status[vital];
+                const cardId = getVitalCardId(vital);
+                const card = document.querySelector(`#${cardId}`).closest('.vital-card');
+                
+                card.className = 'vital-card';
+                if (status.level === 'critical') {
+                    card.classList.add('critical');
+                } else if (status.level === 'abnormal') {
+                    card.classList.add('abnormal');
+                }
+            });
+            
+            // Update risk level display
+            const riskCard = riskDisplay.closest('.vital-card');
+            riskCard.className = 'vital-card';
+            if (guidance.risk_level === 'critical') {
+                riskCard.classList.add('critical');
+            } else if (guidance.risk_level === 'high') {
+                riskCard.classList.add('abnormal');
+            }
+        }
+        
+        function getVitalCardId(vital) {
+            const mapping = {
+                'heart_rate': 'hrDisplay',
+                'blood_pressure_systolic': 'bpDisplay',
+                'oxygen_saturation': 'o2Display',
+                'respiratory_rate': 'respDisplay',
+                'temperature': 'tempDisplay'
+            };
+            return mapping[vital] || '';
+        }
+        
+        function requestDoctorConsult() {
+            document.getElementById('doctorConsult').style.display = 'block';
+            socket.emit('doctor_connect', {emergency_id: currentEmergencyId});
+            
+            // Simulate video call connection
+            setTimeout(() => {
+                document.getElementById('doctorVideo').innerHTML = `
+                    <div style="text-align: center;">
+                        <p>👨‍⚕️ Dr. Smith - Emergency Medicine</p>
+                        <p style="color: #27ae60;">Connected</p>
+                    </div>
+                `;
+            }, 2000);
+        }
+        
+        function endConsult() {
+            document.getElementById('doctorConsult').style.display = 'none';
+        }
+        
+        // Socket event handlers
+        socket.on('vitals_update', (data) => {
+            if (data.emergency_id === currentEmergencyId) {
+                updateAIGuidance(data.ai_guidance);
+                updateVitalStatus(data.ai_guidance);
+            }
+        });
+        
+        // Simulate GPS location updates
+        setInterval(() => {
+            const lat = 28.6139 + (Math.random() - 0.5) * 0.01;
+            const lng = 77.2090 + (Math.random() - 0.5) * 0.01;
+            
+            socket.emit('ambulance_location', {
+                ambulance_id: 'AMB_001',
+                location: {lat, lng}
+            });
+        }, 3000);
+        
+        // Initialize with sample route data
+        setTimeout(() => {
+            document.getElementById('hospitalName').textContent = 'AIIMS Delhi';
+            document.getElementById('distance').textContent = '5.2 km';
+            document.getElementById('eta').textContent = '12 minutes';
+            document.getElementById('trafficStatus').textContent = 'Moderate traffic';
+            document.getElementById('hospitalSpecialty').textContent = 'Multi-specialty';
+            document.getElementById('bedsAvailable').textContent = '8 beds';
+            document.getElementById('erLoad').textContent = '65%';
+            document.getElementById('hospitalContact').textContent = '+91-11-26588500';
+        }, 1000);
+    </script>
+</body>
+</html>

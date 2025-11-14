@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Interface - Telemedicine Console</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; }
+        
+        .header { background: #007bff; color: white; padding: 1rem; text-align: center; }
+        .header h1 { margin-bottom: 0.5rem; }
+        
+        .container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; padding: 1rem; height: calc(100vh - 80px); }
+        
+        .panel { background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .patient-panel { display: flex; flex-direction: column; gap: 1rem; }
+        
+        .patient-info { background: #e9ecef; padding: 1rem; border-radius: 8px; }
+        .patient-info h3 { color: #495057; margin-bottom: 1rem; }
+        
+        .vitals-chart { height: 300px; }
+        
+        .consultation-panel { display: flex; flex-direction: column; gap: 1rem; }
+        
+        .video-call { background: #000; height: 250px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
+        
+        .chat-area { flex: 1; display: flex; flex-direction: column; }
+        .chat-messages { flex: 1; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 1rem; overflow-y: auto; max-height: 200px; }
+        .chat-input { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .chat-input input { flex: 1; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 4px; }
+        
+        .guidance-panel { display: flex; flex-direction: column; gap: 1rem; }
+        
+        .protocol-card { background: #d4edda; border: 1px solid #c3e6cb; padding: 1rem; border-radius: 8px; }
+        .protocol-card.critical { background: #f8d7da; border-color: #f5c6cb; }
+        
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: #000; }
+        
+        .vital-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem; }
+        .vital-item { background: #f8f9fa; padding: 0.75rem; border-radius: 4px; text-align: center; }
+        .vital-item.critical { background: #f8d7da; }
+        .vital-item.abnormal { background: #fff3cd; }
+        
+        .emergency-list { max-height: 300px; overflow-y: auto; }
+        .emergency-item { background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; cursor: pointer; }
+        .emergency-item.active { background: #d4edda; border-left-color: #28a745; }
+        .emergency-item.critical { background: #f8d7da; border-left-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👨⚕️ Doctor Telemedicine Console</h1>
+        <p>Real-time Emergency Consultation & Medical Guidance</p>
+    </div>
+    
+    <div class="container">
+        <div class="panel patient-panel">
+            <div class="patient-info">
+                <h3>📋 Patient Information</h3>
+                <div id="patientDetails">
+                    <p><strong>Emergency ID:</strong> <span id="currentEmergencyId">Select an emergency</span></p>
+                    <p><strong>Condition:</strong> <span id="patientCondition">--</span></p>
+                    <p><strong>Risk Level:</strong> <span id="riskLevel">--</span></p>
+                    <p><strong>ETA to Hospital:</strong> <span id="etaHospital">--</span></p>
+                </div>
+            </div>
+            
+            <div class="vital-grid" id="currentVitals">
+                <div class="vital-item">
+                    <strong id="heartRateValue">--</strong><br>
+                    <small>Heart Rate (bpm)</small>
+                </div>
+                <div class="vital-item">
+                    <strong id="bloodPressureValue">--/--</strong><br>
+                    <small>Blood Pressure</small>
+                </div>
+                <div class="vital-item">
+                    <strong id="oxygenValue">--%</strong><br>
+                    <small>Oxygen Saturation</small>
+                </div>
+                <div class="vital-item">
+                    <strong id="respiratoryValue">--</strong><br>
+                    <small>Respiratory Rate</small>
+                </div>
+            </div>
+            
+            <div class="vitals-chart">
+                <canvas id="vitalsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="panel consultation-panel">
+            <h3>📞 Live Consultation</h3>
+            
+            <div class="video-call" id="videoCall">
+                <div style="text-align: center;">
+                    <p>📹 Video Call</p>
+                    <p id="callStatus">Waiting for connection...</p>
+                </div>
+            </div>
+            
+            <div class="chat-area">
+                <div class="chat-messages" id="chatMessages">
+                    <div style="color: #6c757d; font-style: italic;">Chat with ambulance crew...</div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Type your message...">
+                    <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-success" onclick="startConsultation()">📞 Start Call</button>
+                <button class="btn btn-danger" onclick="endConsultation()">📴 End Call</button>
+            </div>
+        </div>
+        
+        <div class="panel guidance-panel">
+            <h3>🚨 Active Emergencies</h3>
+            
+            <div class="emergency-list" id="emergencyList">
+                <div class="emergency-item" onclick="selectEmergency('EMG_001')">
+                    <strong>EMG_001</strong> - Cardiac Emergency<br>
+                    <small>ETA: 8 minutes | Risk: HIGH</small>
+                </div>
+                <div class="emergency-item critical" onclick="selectEmergency('EMG_002')">
+                    <strong>EMG_002</strong> - Stroke<br>
+                    <small>ETA: 12 minutes | Risk: CRITICAL</small>
+                </div>
+            </div>
+            
+            <div class="protocol-card" id="medicalProtocol">
+                <h4>📖 Medical Protocol</h4>
+                <div id="protocolContent">
+                    <p>Select an emergency to view medical protocols and AI recommendations.</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-warning" onclick="requestCPRGuidance()">CPR Guide</button>
+                <button class="btn btn-primary" onclick="requestBleedingControl()">Bleeding Control</button>
+                <button class="btn btn-success" onclick="generateHospitalReport()">Hospital Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentEmergency = null;
+        let vitalsChart = null;
+        let vitalsHistory = [];
+        
+        // Initialize vitals chart
+        const ctx = document.getElementById('vitalsChart').getContext('2d');
+        vitalsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Heart Rate',
+                        data: [],
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Oxygen Saturation',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+        
+        // Socket event handlers
+        socket.on('vitals_update', (data) => {
+            if (currentEmergency && data.emergency_id === currentEmergency) {
+                updateVitalsDisplay(data.vitals);
+                updateAIGuidance(data.ai_guidance);
+                addToVitalsChart(data.vitals);
+            }
+        });
+        
+        socket.on('new_emergency', (emergency) => {
+            addEmergencyToList(emergency);
+        });
+        
+        socket.on('doctor_connected', () => {
+            document.getElementById('callStatus').textContent = 'Connected to ambulance';
+            document.getElementById('videoCall').style.background = '#28a745';
+        });
+        
+        function selectEmergency(emergencyId) {
+            currentEmergency = emergencyId;
+            document.getElementById('currentEmergencyId').textContent = emergencyId;
+            
+            // Update active emergency styling
+            document.querySelectorAll('.emergency-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Load emergency details (simulated)
+            loadEmergencyDetails(emergencyId);
+        }
+        
+        function loadEmergencyDetails(emergencyId) {
+            // Simulated emergency data
+            const emergencyData = {
+                'EMG_001': {
+                    condition: 'Cardiac Emergency',
+                    riskLevel: 'HIGH',
+                    eta: '8 minutes',
+                    vitals: {
+                        heart_rate: 145,
+                        blood_pressure_systolic: 85,
+                        blood_pressure_diastolic: 55,
+                        oxygen_saturation: 92,
+                        respiratory_rate: 22
+                    }
+                },
+                'EMG_002': {
+                    condition: 'Stroke',
+                    riskLevel: 'CRITICAL',
+                    eta: '12 minutes',
+                    vitals: {
+                        heart_rate: 68,
+                        blood_pressure_systolic: 180,
+                        blood_pressure_diastolic: 110,
+                        oxygen_saturation: 96,
+                        respiratory_rate: 18
+                    }
+                }
+            };
+            
+            const data = emergencyData[emergencyId];
+            if (data) {
+                document.getElementById('patientCondition').textContent = data.condition;
+                document.getElementById('riskLevel').textContent = data.riskLevel;
+                document.getElementById('etaHospital').textContent = data.eta;
+                
+                updateVitalsDisplay(data.vitals);
+                loadMedicalProtocol(data.condition);
+            }
+        }
+        
+        function updateVitalsDisplay(vitals) {
+            document.getElementById('heartRateValue').textContent = vitals.heart_rate || '--';
+            document.getElementById('bloodPressureValue').textContent = 
+                `${vitals.blood_pressure_systolic || '--'}/${vitals.blood_pressure_diastolic || '--'}`;
+            document.getElementById('oxygenValue').textContent = `${vitals.oxygen_saturation || '--'}%`;
+            document.getElementById('respiratoryValue').textContent = vitals.respiratory_rate || '--';
+            
+            // Update vital item colors based on values
+            updateVitalColors(vitals);
+        }
+        
+        function updateVitalColors(vitals) {
+            const items = document.querySelectorAll('.vital-item');
+            
+            // Heart rate
+            if (vitals.heart_rate) {
+                if (vitals.heart_rate < 50 || vitals.heart_rate > 120) {
+                    items[0].className = 'vital-item critical';
+                } else if (vitals.heart_rate < 60 || vitals.heart_rate > 100) {
+                    items[0].className = 'vital-item abnormal';
+                } else {
+                    items[0].className = 'vital-item';
+                }
+            }
+            
+            // Blood pressure
+            if (vitals.blood_pressure_systolic) {
+                if (vitals.blood_pressure_systolic < 80 || vitals.blood_pressure_systolic > 180) {
+                    items[1].className = 'vital-item critical';
+                } else if (vitals.blood_pressure_systolic < 90 || vitals.blood_pressure_systolic > 140) {
+                    items[1].className = 'vital-item abnormal';
+                } else {
+                    items[1].className = 'vital-item';
+                }
+            }
+            
+            // Oxygen saturation
+            if (vitals.oxygen_saturation) {
+                if (vitals.oxygen_saturation < 90) {
+                    items[2].className = 'vital-item critical';
+                } else if (vitals.oxygen_saturation < 95) {
+                    items[2].className = 'vital-item abnormal';
+                } else {
+                    items[2].className = 'vital-item';
+                }
+            }
+        }
+        
+        function addToVitalsChart(vitals) {
+            const now = new Date().toLocaleTimeString();
+            
+            vitalsChart.data.labels.push(now);
+            vitalsChart.data.datasets[0].data.push(vitals.heart_rate);
+            vitalsChart.data.datasets[1].data.push(vitals.oxygen_saturation);
+            
+            // Keep only last 10 data points
+            if (vitalsChart.data.labels.length > 10) {
+                vitalsChart.data.labels.shift();
+                vitalsChart.data.datasets[0].data.shift();
+                vitalsChart.data.datasets[1].data.shift();
+            }
+            
+            vitalsChart.update();
+        }
+        
+        function updateAIGuidance(guidance) {
+            const protocol = document.getElementById('protocolContent');
+            
+            if (guidance.condition_prediction) {
+                protocol.innerHTML = `
+                    <p><strong>🔍 AI Prediction:</strong> ${guidance.condition_prediction}</p>
+                    <p><strong>⚠️ Risk Level:</strong> ${guidance.risk_level.toUpperCase()}</p>
+                    <div style="margin-top: 1rem;">
+                        <strong>📋 Recommended Actions:</strong>
+                        <ul style="margin-left: 1rem; margin-top: 0.5rem;">
+                            ${guidance.immediate_actions.map(action => `<li>${action}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                
+                // Update protocol card color
+                const card = document.getElementById('medicalProtocol');
+                card.className = 'protocol-card';
+                if (guidance.risk_level === 'critical') {
+                    card.classList.add('critical');
+                }
+            }
+        }
+        
+        function loadMedicalProtocol(condition) {
+            const protocols = {
+                'Cardiac Emergency': {
+                    steps: [
+                        'Assess airway, breathing, circulation',
+                        'Administer oxygen if SpO2 < 94%',
+                        'Obtain 12-lead ECG',
+                        'Establish IV access',
+                        'Consider aspirin 325mg if no contraindications',
+                        'Prepare for potential cardiac arrest'
+                    ]
+                },
+                'Stroke': {
+                    steps: [
+                        'Perform FAST assessment',
+                        'Check blood glucose',
+                        'Maintain BP (do not lower unless >220/120)',
+                        'Keep patient NPO',
+                        'Notify stroke team at receiving hospital',
+                        'Document time of symptom onset'
+                    ]
+                }
+            };
+            
+            const protocol = protocols[condition];
+            if (protocol) {
+                document.getElementById('protocolContent').innerHTML = `
+                    <strong>📋 ${condition} Protocol:</strong>
+                    <ul style="margin-left: 1rem; margin-top: 0.5rem;">
+                        ${protocol.steps.map(step => `<li>${step}</li>`).join('')}
+                    </ul>
+                `;
+            }
+        }
+        
+        function startConsultation() {
+            socket.emit('doctor_connect', {emergency_id: currentEmergency});
+            document.getElementById('callStatus').textContent = 'Connecting...';
+        }
+        
+        function endConsultation() {
+            document.getElementById('callStatus').textContent = 'Call ended';
+            document.getElementById('videoCall').style.background = '#000';
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML += `
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>Dr. Smith:</strong> ${message}
+                    </div>
+                `;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                input.value = '';
+            }
+        }
+        
+        function requestCPRGuidance() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `
+                <div style="margin-bottom: 0.5rem; background: #d4edda; padding: 0.5rem; border-radius: 4px;">
+                    <strong>CPR Protocol Sent:</strong><br>
+                    1. Check responsiveness<br>
+                    2. Call for AED<br>
+                    3. 30 compressions, 2 breaths<br>
+                    4. Rate: 100-120/min, Depth: 2+ inches
+                </div>
+            `;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function requestBleedingControl() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `
+                <div style="margin-bottom: 0.5rem; background: #fff3cd; padding: 0.5rem; border-radius: 4px;">
+                    <strong>Bleeding Control Protocol:</strong><br>
+                    1. Apply direct pressure<br>
+                    2. Elevate if possible<br>
+                    3. Use pressure points if needed<br>
+                    4. Do not remove embedded objects
+                </div>
+            `;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function generateHospitalReport() {
+            alert('Hospital report generated and sent to receiving facility.');
+        }
+        
+        function addEmergencyToList(emergency) {
+            const list = document.getElementById('emergencyList');
+            const item = document.createElement('div');
+            item.className = `emergency-item ${emergency.patient_condition === 'cardiac' ? 'critical' : ''}`;
+            item.onclick = () => selectEmergency(emergency.id);
+            item.innerHTML = `
+                <strong>${emergency.id}</strong> - ${emergency.patient_condition}<br>
+                <small>ETA: ${emergency.route ? emergency.route.estimated_time_minutes : '--'} minutes | Risk: HIGH</small>
+            `;
+            list.appendChild(item);
+        }
+        
+        // Initialize with sample data
+        setTimeout(() => {
+            selectEmergency('EMG_001');
+        }, 1000);
+    </script>
+</body>
+</html>

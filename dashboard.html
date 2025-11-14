@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Ambulance Control Center</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        
+        .header { background: #2c3e50; color: white; padding: 1rem; text-align: center; }
+        .header h1 { margin-bottom: 0.5rem; }
+        
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; height: calc(100vh - 80px); }
+        
+        .panel { background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .map-panel { position: relative; }
+        #map { height: 100%; border-radius: 4px; }
+        
+        .controls-panel { display: flex; flex-direction: column; gap: 1rem; }
+        
+        .emergency-form { background: #e74c3c; color: white; padding: 1rem; border-radius: 8px; }
+        .emergency-form h3 { margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: none; border-radius: 4px; }
+        
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-emergency { background: #fff; color: #e74c3c; }
+        .btn-emergency:hover { background: #f8f8f8; }
+        
+        .active-emergencies { flex: 1; }
+        .active-emergencies h3 { margin-bottom: 1rem; color: #2c3e50; }
+        
+        .emergency-item { background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .emergency-item.critical { background: #f8d7da; border-left-color: #dc3545; }
+        
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .status-card { background: #17a2b8; color: white; padding: 1rem; border-radius: 8px; text-align: center; }
+        .status-card h4 { font-size: 2rem; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚑 AI-Powered Smart Ambulance Control Center</h1>
+        <p>Real-time Emergency Response & Hospital Allocation System</p>
+    </div>
+    
+    <div class="container">
+        <div class="panel map-panel">
+            <div id="map"></div>
+        </div>
+        
+        <div class="panel controls-panel">
+            <div class="emergency-form">
+                <h3>🚨 Create Emergency</h3>
+                <form id="emergencyForm">
+                    <div class="form-group">
+                        <label>Pickup Location (Lat, Lng):</label>
+                        <input type="text" id="pickupLocation" placeholder="28.6139, 77.2090" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Patient Condition:</label>
+                        <select id="patientCondition">
+                            <option value="general">General Emergency</option>
+                            <option value="cardiac">Cardiac/Heart Attack</option>
+                            <option value="stroke">Stroke</option>
+                            <option value="trauma">Trauma/Accident</option>
+                            <option value="respiratory">Respiratory Distress</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-emergency">🚑 Dispatch Ambulance</button>
+                </form>
+            </div>
+            
+            <div class="active-emergencies">
+                <h3>Active Emergencies</h3>
+                <div id="emergencyList"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="status-grid">
+        <div class="status-card">
+            <h4 id="activeCount">0</h4>
+            <p>Active Emergencies</p>
+        </div>
+        <div class="status-card" style="background: #28a745;">
+            <h4 id="ambulanceCount">12</h4>
+            <p>Available Ambulances</p>
+        </div>
+        <div class="status-card" style="background: #ffc107; color: #000;">
+            <h4 id="avgResponse">8.5</h4>
+            <p>Avg Response Time (min)</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([28.6139, 77.2090], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        
+        // Socket connection
+        const socket = io();
+        
+        let activeEmergencies = {};
+        let ambulanceMarkers = {};
+        let hospitalMarkers = {};
+        
+        // Add hospital markers
+        const hospitals = [
+            {name: 'AIIMS', lat: 28.5672, lng: 77.2100},
+            {name: 'Fortis', lat: 28.6139, lng: 77.2090},
+            {name: 'Max Hospital', lat: 28.6289, lng: 77.2065},
+            {name: 'Apollo', lat: 28.6089, lng: 77.2190}
+        ];
+        
+        hospitals.forEach(hospital => {
+            L.marker([hospital.lat, hospital.lng])
+                .addTo(map)
+                .bindPopup(`🏥 ${hospital.name}`)
+                .openPopup();
+        });
+        
+        // Emergency form submission
+        document.getElementById('emergencyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const location = document.getElementById('pickupLocation').value.split(',');
+            const condition = document.getElementById('patientCondition').value;
+            
+            const response = await fetch('/api/emergency', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    pickup_location: {
+                        lat: parseFloat(location[0].trim()),
+                        lng: parseFloat(location[1].trim())
+                    },
+                    patient_condition: condition
+                })
+            });
+            
+            const result = await response.json();
+            console.log('Emergency created:', result);
+        });
+        
+        // Socket event handlers
+        socket.on('new_emergency', (emergency) => {
+            activeEmergencies[emergency.id] = emergency;
+            updateEmergencyList();
+            addEmergencyToMap(emergency);
+            updateStats();
+        });
+        
+        socket.on('location_update', (data) => {
+            updateAmbulanceLocation(data.ambulance_id, data.location);
+        });
+        
+        function addEmergencyToMap(emergency) {
+            const pickup = emergency.pickup_location;
+            const hospital = emergency.hospital;
+            
+            // Add pickup marker
+            L.marker([pickup.lat, pickup.lng])
+                .addTo(map)
+                .bindPopup(`🚨 Emergency: ${emergency.patient_condition}`)
+                .openPopup();
+            
+            // Add route line
+            if (emergency.route && emergency.route.route_points) {
+                const routePoints = emergency.route.route_points.map(p => [p.lat, p.lng]);
+                L.polyline(routePoints, {color: 'red', weight: 3}).addTo(map);
+            }
+        }
+        
+        function updateAmbulanceLocation(ambulanceId, location) {
+            if (ambulanceMarkers[ambulanceId]) {
+                ambulanceMarkers[ambulanceId].setLatLng([location.lat, location.lng]);
+            } else {
+                ambulanceMarkers[ambulanceId] = L.marker([location.lat, location.lng])
+                    .addTo(map)
+                    .bindPopup(`🚑 Ambulance ${ambulanceId}`);
+            }
+        }
+        
+        function updateEmergencyList() {
+            const list = document.getElementById('emergencyList');
+            list.innerHTML = '';
+            
+            Object.values(activeEmergencies).forEach(emergency => {
+                const item = document.createElement('div');
+                item.className = `emergency-item ${emergency.patient_condition === 'cardiac' ? 'critical' : ''}`;
+                item.innerHTML = `
+                    <strong>ID: ${emergency.id}</strong><br>
+                    Condition: ${emergency.patient_condition}<br>
+                    Hospital: ${emergency.hospital ? emergency.hospital.name : 'Allocating...'}<br>
+                    ETA: ${emergency.route ? emergency.route.estimated_time_minutes : 'Calculating...'} min
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function updateStats() {
+            document.getElementById('activeCount').textContent = Object.keys(activeEmergencies).length;
+        }
+        
+        // Simulate some ambulance movements
+        setInterval(() => {
+            const ambulanceId = 'AMB_001';
+            const lat = 28.6139 + (Math.random() - 0.5) * 0.1;
+            const lng = 77.2090 + (Math.random() - 0.5) * 0.1;
+            
+            socket.emit('ambulance_location', {
+                ambulance_id: ambulanceId,
+                location: {lat, lng}
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
